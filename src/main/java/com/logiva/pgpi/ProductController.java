@@ -42,6 +42,22 @@ public class ProductController {
         return posicionRespository.findAll();
     }
     
+    //Listing all positions for a specific productId
+    @GetMapping("PGPI/api/backend/posiciones/indexProduct")
+    public List<Posicion> posiciones_index_productId(@RequestBody Producto producto){
+    	List<Posicion> posiciones = posicionRespository.findAll();
+    	List<Instancia_Producto> instancias = instanciaProductoRespository.findAll();
+    	int columna =  return_position_product(producto.getId(), posiciones, instancias);
+    	
+    	List<Posicion> posicionesProducto = new ArrayList<Posicion>();
+    	for (Posicion pos: posiciones) {
+    		if(pos.getColumna() == columna) {
+    			posicionesProducto.add(pos);
+    		}
+    	}
+        return posicionesProducto;
+    }
+    
     //Listing all products instances
     @GetMapping("PGPI/api/backend/instancias/index")
     public List<Instancia_Producto> instancias_index(){
