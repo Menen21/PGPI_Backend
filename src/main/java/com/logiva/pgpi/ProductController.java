@@ -26,8 +26,20 @@ public class ProductController {
 	
     //Listing Products
     @GetMapping("PGPI/api/backend/producto/index")
-    public List<Producto> producto_index(){
-        return productoRespository.findAll();
+    public List<Producto_cantidades> producto_index(){
+    	List<Producto> productos = productoRespository.findAll();
+    	List<Posicion> posiciones = posicionRespository.findAll();
+    	List<Instancia_Producto> instancias = instanciaProductoRespository.findAll();
+    	List<Producto_cantidades> productos_cantidades = new ArrayList<Producto_cantidades>();
+
+    	for (Producto p: productos) {
+    		int columna =  return_position_product(p.getId(), posiciones, instancias);
+    		int stock = count_products(1, columna, posiciones);
+    		int preparacion = count_products(2, columna, posiciones);
+    		productos_cantidades.add(new Producto_cantidades(p, stock, preparacion));
+    	}
+    	
+        return productos_cantidades;
     }
     
     //Listing Orders
