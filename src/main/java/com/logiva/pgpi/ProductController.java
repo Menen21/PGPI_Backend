@@ -4,7 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 public class ProductController {
@@ -78,12 +80,20 @@ public class ProductController {
     @PostMapping("PGPI/api/backend/producto/add")
     public Producto create(@RequestBody Producto producto){
     	int amount = producto.getCantidad();
-    	List<Producto> data = productoRespository.findAll();
+    	List<Producto> productos = productoRespository.findAll();
+    	List<Posicion> posiciones = posicionRespository.findAll();
+    	List<Instancia_Producto> instancias = instanciaProductoRespository.findAll();
 
     	//Look through the table if the Product already exists.
-    	for (Producto p: data) {
-    		//If it exists we just add the amount to the current stock.
+    	for (Producto p: productos) {
+    		//If it exists we just add the amount to existing stock if there is space
     		if (p.getNombre().equals(producto.getNombre())){
+    			int columna =  return_position_product(p.getId(), posiciones, instancias);
+    			int count = count_products(1, columna, posiciones);
+    			System.out.println(count);
+    			if (count >= 20) {
+    				throw new ResponseStatusException(HttpStatus.CONFLICT, "Product stock is already full.");
+    			}
     			p.setCantidad(p.getCantidad() + producto.getCantidad());
     			p = productoRespository.save(p);
     			createInstancesProductos(amount, p.getId());
@@ -95,7 +105,6 @@ public class ProductController {
     	createInstancesProductos(amount, producto.getId());
         return producto;
     }
-
 
     //Ordering Products
     @PostMapping("PGPI/api/backend/pedido/order")
