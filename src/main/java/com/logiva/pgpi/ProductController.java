@@ -128,10 +128,11 @@ public class ProductController {
 
     	for (Producto p: productos) {
     		if ((p.getId() == pedido.getId_producto()) & (p.getCantidad() >= pedido.getCantidad())){
-    			List<Object> new_instancias = getInstancesProducts(pedido.getId_producto(), pedido.getCantidad());
-
     			pedido.setEstado("Preparación");
-    			pedidoRespository.save(pedido);
+    			pedido = pedidoRespository.save(pedido);
+    			List<Object> new_instancias = new ArrayList<Object>();
+    			new_instancias.add(pedido);
+    			new_instancias.add(getInstancesProducts(pedido.getId_producto(), pedido.getCantidad()));
     			return new_instancias;
     		}
     	}
