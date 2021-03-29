@@ -17,14 +17,14 @@ public class Pedido {
     private int id_cliente;
     private int cantidad;
     private String direccion;
-    private enum estado{
-    	PENDIENTE,
-    	RECIBIDO,
-    	PREPARACION,
-    	EN_CAMINO,
-    	ENTREGADO
-    }
+    private String estado;
     
+	public String getEstado() {
+		return estado;
+	}
+	public void setEstado(String estado) {
+		this.estado = estado;
+	}
 	public int getId() {
 		return id;
 	}

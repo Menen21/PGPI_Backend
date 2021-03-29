@@ -31,8 +31,6 @@ public class Posicion {
 		// TODO Auto-generated constructor stub
 	}
 
-
-
 	public String getTipo() {
 		return tipo;
 	}
