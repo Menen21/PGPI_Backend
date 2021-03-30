@@ -6,6 +6,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+
+
 @Table(name = "instancia_producto")
 @Entity
 public class Instancia_Producto {
@@ -16,7 +18,17 @@ public class Instancia_Producto {
     private int id_producto;
     private int id_posicion;
     
-    public  Instancia_Producto() {}
+    private transient int disponible = 1;
+    
+    public int getDisponible() {
+		return disponible;
+	}
+
+	public void setDisponible(int disponible) {
+		this.disponible = disponible;
+	}
+
+	public  Instancia_Producto() {}
     
 	public Instancia_Producto(int id_producto, int id_posicion) {
 		this.id_producto = id_producto;

@@ -3,6 +3,8 @@ package com.logiva.pgpi;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.annotation.PostConstruct;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -10,7 +12,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 public class ProductController {
-	
 	@Autowired
     PedidoRepository pedidoRespository;
 	@Autowired
@@ -22,6 +23,11 @@ public class ProductController {
     @Autowired
     InstanciaProductoRepository instanciaProductoRespository;
 
+    List<Instancia_Producto> instancias_disp = new ArrayList<Instancia_Producto>();
+    @PostConstruct
+    public void init() {
+    	instancias_disp.addAll(instanciaProductoRespository.findAll());
+    }
 
     //Listing Products
     @GetMapping("PGPI/api/backend/producto/index")
@@ -127,6 +133,8 @@ public class ProductController {
 
     	for (Producto p: productos) {
     		if ((p.getId() == pedido.getId_producto()) & (p.getCantidad() >= pedido.getCantidad())){
+    			p.setCantidad(p.getCantidad() - pedido.getCantidad());
+    			productoRespository.save(p);
     			pedido.setEstado("Preparación");
     			pedido = pedidoRespository.save(pedido);
     			List<Object> new_instancias = new ArrayList<Object>();
@@ -148,19 +156,17 @@ public class ProductController {
     	List<Pedido> pedidos = pedidoRespository.findAll();
     	
     	for(Pedido pedido: pedidos) {
-    		if(pedido.getId()== ped_id) {
+    		if(pedido.getId() == ped_id) {    			
 		    	for (Producto p: productos) {
-		    		if ((p.getId() == pedido.getId_producto()) & (p.getCantidad() >= pedido.getCantidad())){
-		    			p.setCantidad(p.getCantidad() - pedido.getCantidad());
-		    			p = productoRespository.save(p);
+		    		if ((p.getId() == pedido.getId_producto())){
 		    			updateInstancesProducts(pedido.getId_producto(), pedido.getCantidad());
 		
-		    			//We need restock of the product.
-		    			if(p.getCantidad() < p.getCantidad_minima_restock()) {
-		    				System.out.println("Se necesita restock");
-		    			}
 		    			pedido.setEstado("En Camino");
 		    			pedidoRespository.save(pedido);
+		    			//We need restock of the product.
+		    			if(p.getCantidad() < p.getCantidad_minima_restock()) {
+		    				throw new ResponseStatusException(HttpStatus.NO_CONTENT, "Restock is needed for the product");
+		    			}
 		    			return true;
 		    		}
 		    	}
@@ -261,27 +267,28 @@ public class ProductController {
 	    	    new_instancias.add(new Instancia_Producto(id_producto, p.getId()));
 	    	}
     	}
-
+    	instancias_disp.addAll(new_instancias);
     	instanciaProductoRespository.saveAll(new_instancias);
     }
     
     private List<Object> getInstancesProducts(int id_producto, int cantidad) {
     	List<Posicion> posiciones = posicionRespository.findAll();
-    	List<Instancia_Producto> instancias = instanciaProductoRespository.findAll();
-    	
     	List<Object> instancias_posiciones = new ArrayList<Object>();
-
-    	for (Instancia_Producto ins: instancias) {
-    		for (Posicion pos: posiciones) {
-    			if((ins.getId_producto() == id_producto) & (cantidad > 0) & (pos.getId() == ins.getId_posicion())) {
-    				List<Object> pareja_pos_ins = new ArrayList<Object>();
-    				pareja_pos_ins.add(pos);
-    				pareja_pos_ins.add(ins);   		
-    				instancias_posiciones.add(pareja_pos_ins);
-	    			cantidad--;
+	    	
+    	for (Instancia_Producto ins: instancias_disp) {
+    		if((ins.getId_producto() == id_producto) & (ins.getDisponible() == 1)) {
+	    		for (Posicion pos: posiciones) {
+	    			if((cantidad > 0) & (pos.getId() == ins.getId_posicion())) {
+	    				List<Object> pareja_pos_ins = new ArrayList<Object>();
+	    				pareja_pos_ins.add(pos);
+	    				pareja_pos_ins.add(ins);   		
+	    				instancias_posiciones.add(pareja_pos_ins);
+		    			cantidad--;
+		    			ins.setDisponible(0);
+		    		}
+	    			
 	    		}
-    			
-    		}	    	
+    		}
     	}
 		return instancias_posiciones;
 	}
