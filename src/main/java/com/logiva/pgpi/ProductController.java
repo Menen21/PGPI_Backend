@@ -10,7 +10,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 public class ProductController {
-
+	
 	@Autowired
     PedidoRepository pedidoRespository;
 	@Autowired
@@ -75,10 +75,9 @@ public class ProductController {
         return instanciaProductoRespository.findAll();
     }
 
-
 	//Adding Products
     @PostMapping("PGPI/api/backend/producto/add")
-    public List<Producto_cantidades> create(@RequestBody Producto producto){
+    public List<Producto_cantidades> addProduct(@RequestBody Producto producto){
     	if (producto.getCantidad() > 40) {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "Product maximum quantity is 40.");
 		}
@@ -94,8 +93,8 @@ public class ProductController {
     		if (p.getNombre().equals(producto.getNombre())){
     			int columna =  return_position_product(p.getId(), posiciones, instancias);
     			int count = count_products(1, columna, posiciones);
-    			if (count >= 20) {
-    				throw new ResponseStatusException(HttpStatus.CONFLICT, "Product stock is already full.");
+    			if ((count >= 20) || (producto.getCantidad() > 20)) {
+    				throw new ResponseStatusException(HttpStatus.CONFLICT, "Full, no space available for this product.");
     			}
     			p.setCantidad(p.getCantidad() + producto.getCantidad());
     			p = productoRespository.save(p);
@@ -136,14 +135,14 @@ public class ProductController {
     			return new_instancias;
     		}
     	}
-    	pedido.setEstado("Preparación");
+    	pedido.setEstado("Pendiente");
 		pedidoRespository.save(pedido);
     	throw new ResponseStatusException(HttpStatus.INSUFFICIENT_STORAGE, "There is no stock. Restocking item.");
     }
     
     //Delete instances and positions for Client Order. 
     @PostMapping("PGPI/api/backend/pedido/order_del")
-    public void delete_ins_pos(@RequestParam String id){
+    public boolean delete_ins_pos(@RequestParam String id){
     	int ped_id = Integer.parseInt(id);
     	List<Producto> productos = productoRespository.findAll();
     	List<Pedido> pedidos = pedidoRespository.findAll();
@@ -162,10 +161,39 @@ public class ProductController {
 		    			}
 		    			pedido.setEstado("En Camino");
 		    			pedidoRespository.save(pedido);
+		    			return true;
 		    		}
 		    	}
     		}
     	}
+		return false;
+    }
+    
+    //Add restock and process pending order. 
+    @PostMapping("PGPI/api/backend/pedido/pendingOrder")
+    public List<Object> pendingOrder(@RequestParam String id_pedido, String id_producto, String cantidad){
+    	int id_prod = Integer.parseInt(id_producto);
+    	int id_ped = Integer.parseInt(id_pedido);
+    	int cant = Integer.parseInt(cantidad);
+    	List<Producto> productos = productoRespository.findAll();
+    	List<Pedido> pedidos = pedidoRespository.findAll();
+    	List<Object> product_orderInstances = new ArrayList<Object>();
+    	
+    	for (Producto p: productos) {
+    		if(p.getId() == id_prod) {
+    			List<Producto_cantidades> producto_cantidades = addProduct(new Producto(p.getNombre(), cant));
+    			product_orderInstances.add(producto_cantidades);
+    		}
+    	}
+    	
+    	for (Pedido ped: pedidos) {
+    		if(ped.getId() == id_ped) {
+    			List<Object> pos_ins= get_ins_pos(ped);
+    	    	product_orderInstances.add(pos_ins);
+    		}
+    	}
+    	
+    	return product_orderInstances;
     }
 
 	//Add user
@@ -218,10 +246,12 @@ public class ProductController {
     	if (columna == 0){
     		columna = return_first_available_column(posiciones);
     		for (int i=0; i < 20; i++) {
-	    		Posicion p = new Posicion(2, columna, "Preparación");
-	    		p = posicionRespository.save(p);
-	    	    new_instancias.add(new Instancia_Producto(id_producto, p.getId()));
-	    	    cantidad--;
+		    	if(cantidad>0) {	
+    				Posicion p = new Posicion(2, columna, "Preparación");
+		    		p = posicionRespository.save(p);
+		    	    new_instancias.add(new Instancia_Producto(id_producto, p.getId()));
+		    	    cantidad--;
+		    	}
     		}
     	}
     	if(cantidad>0) {
