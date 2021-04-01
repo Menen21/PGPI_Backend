@@ -39,8 +39,8 @@ public class ProductController {
 
     	for (Producto p: productos) {
     		int columna =  return_position_product(p.getId(), posiciones, instancias);
-    		int stock = count_products(1, columna, posiciones);
-    		int preparacion = count_products(2, columna, posiciones);
+    		int stock = count_products(1, columna);
+    		int preparacion = count_products(2, columna);
     		productos_cantidades.add(new Producto_cantidades(p, stock, preparacion));
     	}
     	
@@ -98,7 +98,7 @@ public class ProductController {
     		//If it exists we just add the amount to existing stock if there is space
     		if (p.getNombre().equals(producto.getNombre())){
     			int columna =  return_position_product(p.getId(), posiciones, instancias);
-    			int count = count_products(1, columna, posiciones);
+    			int count = count_products(1, columna);
     			if ((count >= 20) || (producto.getCantidad() > 20)) {
     				throw new ResponseStatusException(HttpStatus.CONFLICT, "Full, no space available for this product.");
     			}
@@ -106,9 +106,8 @@ public class ProductController {
     			p = productoRespository.save(p);
     			createInstancesProductos(amount, p.getId());
     			
-    			posiciones = posicionRespository.findAll();
-    			int stock = count_products(1, columna, posiciones);
-        		int preparacion = count_products(2, columna, posiciones);
+    			int stock = count_products(1, columna);
+        		int preparacion = count_products(2, columna);
         		productos_cantidades.add(new Producto_cantidades(p, stock, preparacion));
     			return productos_cantidades;
     		}
@@ -117,11 +116,10 @@ public class ProductController {
     	producto = productoRespository.save(producto);
     	createInstancesProductos(amount, producto.getId());
     	
-    	posiciones = posicionRespository.findAll();
     	instancias = instanciaProductoRespository.findAll();
     	int columna =  return_position_product(producto.getId(), posiciones, instancias);
-    	int stock = count_products(1, columna, posiciones);
-		int preparacion = count_products(2, columna, posiciones);
+    	int stock = count_products(1, columna);
+		int preparacion = count_products(2, columna);
 		productos_cantidades.add(new Producto_cantidades(producto, stock, preparacion));
         return productos_cantidades;
     }
@@ -152,26 +150,24 @@ public class ProductController {
     @PostMapping("PGPI/api/backend/pedido/order_del")
     public boolean delete_ins_pos(@RequestParam String id){
     	int ped_id = Integer.parseInt(id);
-    	List<Producto> productos = productoRespository.findAll();
     	List<Pedido> pedidos = pedidoRespository.findAll();
+    	int cantidad = 0;
     	
-    	for(Pedido pedido: pedidos) {
-    		if(pedido.getId() == ped_id) {    			
-		    	for (Producto p: productos) {
-		    		if ((p.getId() == pedido.getId_producto())){
-		    			updateInstancesProducts(pedido.getId_producto(), pedido.getCantidad());
-		
-		    			pedido.setEstado("En Camino");
-		    			pedidoRespository.save(pedido);
-		    			//We need restock of the product.
-		    			if(p.getCantidad() < p.getCantidad_minima_restock()) {
-		    				throw new ResponseStatusException(HttpStatus.NO_CONTENT, "Restock is needed for the product");
-		    			}
-		    			return true;
-		    		}
-		    	}
+    	for (Pedido pedido: pedidos) {
+    		if(pedido.getId() == ped_id) {
+    			for (Pedido ped: pedidos) {
+    				if((ped.getId() < pedido.getId()) & (ped.getId_producto() == pedido.getId_producto()) & (ped.getEstado().equals(pedido.getEstado()))) {
+    					cantidad = cantidad + ped.getCantidad();
+    				}
+    			}
+    			deleteInstancesProducts(pedido.getId_producto(), pedido.getCantidad(), cantidad);
+    			pedido.setEstado("En Camino");
+    			pedidoRespository.save(pedido);
+    			return true;
     		}
     	}
+    	
+    	
 		return false;
     }
     
@@ -292,6 +288,39 @@ public class ProductController {
     	}
 		return instancias_posiciones;
 	}
+    
+    //Used when there is an order, removes the products sold and moves inventory from 'Stock' to 'Preparation' if needed
+    private void deleteInstancesProducts(int id_producto, int cantidad, int cantidad_resv) {
+    	List<Posicion> posiciones = posicionRespository.findAll();
+    	List<Instancia_Producto> del_instancias = new ArrayList<Instancia_Producto>();
+    	List<Posicion> del_posiciones = new ArrayList<Posicion>();
+    	int columna =  return_position_product(id_producto, posiciones, instancias_disp);
+	    	
+    	while((cantidad_resv + cantidad > 0)) {
+	        for (Instancia_Producto ins: instancias_disp) {
+	       		if((ins.getId_producto() == id_producto) & (ins.getDisponible() == 0)) {
+	       			for (Posicion pos: posiciones) {
+	       				if (pos.getId() == ins.getId_posicion()) {
+	       					if((cantidad > 0) & (cantidad_resv < 1)) {
+				   	    		del_instancias.add(ins);
+				   	    		del_posiciones.add(pos);
+				   	    		cantidad--;
+	       					}
+	       					cantidad_resv--;
+			        	}
+	       			}
+	        	}
+	        }
+    	}
+    	
+    	posicionRespository.deleteInBatch(del_posiciones);
+    	instanciaProductoRespository.deleteInBatch(del_instancias);
+    	
+    	int count_left_prep = count_products(2, columna);
+		if(count_left_prep == 0) {
+			updateInstances(1, columna, posiciones);
+		}
+	}
 
 
 
@@ -323,27 +352,7 @@ public class ProductController {
     	}
 		return 0;
     }
-
-
-    //Used when there is an order, removes the products sold and moves inventory from 'Stock' to 'Preparation' if needed
-    private void updateInstancesProducts(int id_producto, int cantidad) {
-    	List<Posicion> posiciones = posicionRespository.findAll();
-    	List<Instancia_Producto> instancias = instanciaProductoRespository.findAll();
-
-    	int columna =  return_position_product(id_producto, posiciones, instancias);
-		while (cantidad > 0) {
-			int sold = deleteInstances(2, columna, posiciones, instancias, cantidad);
-			posiciones = posicionRespository.findAll();
-			instancias = instanciaProductoRespository.findAll();
-			int count_left_prep = count_products(2, columna, posiciones);
-
-			if(count_left_prep == 0) {
-				updateInstances(1, columna, posiciones);
-			}
-			cantidad -= sold;
-		}
-
-	}
+    
 
     //Move products from Stock to Preparation
     private void updateInstances(int fila, int columna, List<Posicion> posiciones) {
@@ -384,14 +393,14 @@ public class ProductController {
     }
 
 	//Count products in a specific row and column
-	private int count_products(int fila, int columna, List<Posicion> posiciones) {
+	private int count_products(int fila, int columna) {
+		List<Posicion> posiciones = posicionRespository.findAll();
 		int count = 0;
 		for (Posicion pos: posiciones) {
 			if((pos.getFila()==fila) & (pos.getColumna()==columna)) {
 				count++;
 			}
 		}
-
 		return count;
 	}
 
