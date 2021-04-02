@@ -1,7 +1,9 @@
 package com.logiva.pgpi;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 
@@ -123,54 +125,81 @@ public class ProductController {
 		productos_cantidades.add(new Producto_cantidades(producto, stock, preparacion));
         return productos_cantidades;
     }
+    
 
     //Get instances and positions for Client Order. 
     @PostMapping("PGPI/api/backend/pedido/order_pos")
-    public List<Object> get_ins_pos(@RequestBody Pedido pedido){
+    public List<Object> get_ins_pos_order(@RequestBody Pedido pedido){
+    	List<Integer> id_vals = get_values_string(pedido.getId_producto());
+    	List<Integer> cant_vals = get_values_string(pedido.getCantidad());
+    	List<Object> all_pos_prod = new ArrayList<Object>();
+
+    	for(int i = 0; i < id_vals.size(); i++) {
+    		all_pos_prod.add(get_ins_pos_product(pedido, id_vals.get(i), cant_vals.get(i)));
+    	}
+    	
+    	pedido.setEstado("Preparación");
+    	Pedido ped = pedidoRespository.save(pedido);
+    	all_pos_prod.add(ped);
+		return all_pos_prod;
+    }
+
+  //Delete instances and positions for Client Order. 
+    @PostMapping("PGPI/api/backend/pedido/order_del")
+    public boolean delete_ins_pos_order(@RequestParam String id){
+    	int ped_id = Integer.parseInt(id);
+    	List<Pedido> pedidos = pedidoRespository.findAll();
+    	
+    	for (Pedido pedido: pedidos) {
+    		if(pedido.getId() == ped_id) {
+    			List<Integer> id_vals = get_values_string(pedido.getId_producto());
+    	    	List<Integer> cant_vals = get_values_string(pedido.getCantidad());
+    	    	
+    	    	for(int i = 0; i < id_vals.size(); i++) {
+    	    		delete_ins_pos_product(pedidos, pedido, id_vals.get(i), cant_vals.get(i));
+    	    	}
+    		}
+    	}
+    	
+    	return true;
+    }
+    
+    
+    public boolean delete_ins_pos_product(List<Pedido> pedidos, Pedido pedido, int prod_id, int cantidad){
+    	int cantidad_resv = 0;
+    	
+    	for (Pedido ped: pedidos) {
+    		List<Integer> id_vals = get_values_string(pedido.getId_producto());
+    		if((ped.getId() < pedido.getId()) & (id_vals.contains(prod_id)) & (ped.getEstado().equals(pedido.getEstado()))) {
+    			List<Integer> cant_vals = get_values_string(pedido.getCantidad());
+    			int index = id_vals.indexOf(prod_id);
+    			cantidad_resv = cantidad_resv + cant_vals.get(index);
+    		}
+    	}
+    	deleteInstancesProducts(prod_id, cantidad, cantidad_resv);
+    	pedido.setEstado("En Camino");
+    	pedidoRespository.save(pedido);
+    	return true;
+    }
+    
+    public List<Object> get_ins_pos_product(Pedido pedido, int id, int cantidad){
     	List<Producto> productos = productoRespository.findAll();
 
     	for (Producto p: productos) {
-    		if ((p.getId() == pedido.getId_producto()) & (p.getCantidad() >= pedido.getCantidad())){
-    			p.setCantidad(p.getCantidad() - pedido.getCantidad());
+    		if ((p.getId() == id) & (p.getCantidad() >= cantidad)){
+    			p.setCantidad(p.getCantidad() - cantidad);
     			productoRespository.save(p);
-    			pedido.setEstado("Preparación");
-    			pedido = pedidoRespository.save(pedido);
-    			List<Object> new_instancias = new ArrayList<Object>();
-    			new_instancias.add(pedido);
-    			new_instancias.add(getInstancesProducts(pedido.getId_producto(), pedido.getCantidad()));
-    			return new_instancias;
+    			return getInstancesProducts(id, cantidad);
     		}
     	}
     	pedido.setEstado("Pendiente");
 		pedidoRespository.save(pedido);
     	throw new ResponseStatusException(HttpStatus.INSUFFICIENT_STORAGE, "There is no stock. Restocking item.");
     }
+ 
+
     
-    //Delete instances and positions for Client Order. 
-    @PostMapping("PGPI/api/backend/pedido/order_del")
-    public boolean delete_ins_pos(@RequestParam String id){
-    	int ped_id = Integer.parseInt(id);
-    	List<Pedido> pedidos = pedidoRespository.findAll();
-    	int cantidad = 0;
-    	
-    	for (Pedido pedido: pedidos) {
-    		if(pedido.getId() == ped_id) {
-    			for (Pedido ped: pedidos) {
-    				if((ped.getId() < pedido.getId()) & (ped.getId_producto() == pedido.getId_producto()) & (ped.getEstado().equals(pedido.getEstado()))) {
-    					cantidad = cantidad + ped.getCantidad();
-    				}
-    			}
-    			deleteInstancesProducts(pedido.getId_producto(), pedido.getCantidad(), cantidad);
-    			pedido.setEstado("En Camino");
-    			pedidoRespository.save(pedido);
-    			return true;
-    		}
-    	}
-    	
-    	
-		return false;
-    }
-    
+    /*
     //Add restock and process pending order. 
     @PostMapping("PGPI/api/backend/pedido/pendingOrder")
     public List<Object> pendingOrder(@RequestParam String id_pedido, String id_producto, String cantidad){
@@ -198,6 +227,8 @@ public class ProductController {
     	return product_orderInstances;
     }
 
+	*/ 
+    
 	//Add user
     @PostMapping("PGPI/api/backend/user/add")
     public Usuario adduser(@RequestBody Usuario usuario) {
@@ -404,6 +435,10 @@ public class ProductController {
 		return count;
 	}
 
-
+	public List<Integer> get_values_string(String values) {
+		return Arrays.stream(values.split(","))
+                .map(Integer::parseInt)
+                .collect(Collectors.toList());
+	}
 
 }

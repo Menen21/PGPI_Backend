@@ -13,9 +13,9 @@ public class Pedido {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
 	private int id;
     
-    private int id_producto;
+    private String id_producto;
     private int id_cliente;
-    private int cantidad;
+    private String cantidad;
     private String direccion;
     private String estado;
     
@@ -31,10 +31,10 @@ public class Pedido {
 	public void setId(int id) {
 		this.id = id;
 	}
-	public int getId_producto() {
+	public String getId_producto() {
 		return id_producto;
 	}
-	public void setId_producto(int id_producto) {
+	public void setId_producto(String id_producto) {
 		this.id_producto = id_producto;
 	}
 	public int getId_cliente() {
@@ -43,10 +43,10 @@ public class Pedido {
 	public void setId_cliente(int id_cliente) {
 		this.id_cliente = id_cliente;
 	}
-	public int getCantidad() {
+	public String getCantidad() {
 		return cantidad;
 	}
-	public void setCantidad(int cantidad) {
+	public void setCantidad(String cantidad) {
 		this.cantidad = cantidad;
 	}
 	public String getDireccion() {
