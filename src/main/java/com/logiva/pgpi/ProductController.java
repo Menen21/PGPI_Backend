@@ -133,6 +133,10 @@ public class ProductController {
     	List<Integer> id_vals = get_values_string(pedido.getId_producto());
     	List<Integer> cant_vals = get_values_string(pedido.getCantidad());
     	List<Object> all_pos_prod = new ArrayList<Object>();
+    	
+    	if(id_vals.size() != cant_vals.size()) {
+    		throw new ResponseStatusException(HttpStatus.CONFLICT, "Size missmatch. Quantities and number of products must be the same size.");
+    	}
 
     	for(int i = 0; i < id_vals.size(); i++) {
     		all_pos_prod.add(get_ins_pos_product(pedido, id_vals.get(i), cant_vals.get(i)));
@@ -164,24 +168,7 @@ public class ProductController {
     	return true;
     }
     
-    
-    public boolean delete_ins_pos_product(List<Pedido> pedidos, Pedido pedido, int prod_id, int cantidad){
-    	int cantidad_resv = 0;
-    	
-    	for (Pedido ped: pedidos) {
-    		List<Integer> id_vals = get_values_string(pedido.getId_producto());
-    		if((ped.getId() < pedido.getId()) & (id_vals.contains(prod_id)) & (ped.getEstado().equals(pedido.getEstado()))) {
-    			List<Integer> cant_vals = get_values_string(pedido.getCantidad());
-    			int index = id_vals.indexOf(prod_id);
-    			cantidad_resv = cantidad_resv + cant_vals.get(index);
-    		}
-    	}
-    	deleteInstancesProducts(prod_id, cantidad, cantidad_resv);
-    	pedido.setEstado("En Camino");
-    	pedidoRespository.save(pedido);
-    	return true;
-    }
-    
+        
     public List<Object> get_ins_pos_product(Pedido pedido, int id, int cantidad){
     	List<Producto> productos = productoRespository.findAll();
 
@@ -195,6 +182,24 @@ public class ProductController {
     	pedido.setEstado("Pendiente");
 		pedidoRespository.save(pedido);
     	throw new ResponseStatusException(HttpStatus.INSUFFICIENT_STORAGE, "There is no stock. Restocking item.");
+    }
+    
+    
+    public boolean delete_ins_pos_product(List<Pedido> pedidos, Pedido pedido, int prod_id, int cantidad){
+    	int cantidad_resv = 0;
+    	
+    	for (Pedido ped: pedidos) {
+    		List<Integer> id_vals = get_values_string(pedido.getId_producto());
+    		if((ped.getId() < pedido.getId()) & (id_vals.contains(prod_id)) & (ped.getEstado().equals(pedido.getEstado()))) {
+    			int index = id_vals.indexOf(prod_id);
+    			List<Integer> cant_vals = get_values_string(pedido.getCantidad());
+    			cantidad_resv = cantidad_resv + cant_vals.get(index);
+    		}
+    	}
+    	deleteInstancesProducts(prod_id, cantidad, cantidad_resv);
+    	pedido.setEstado("En Camino");
+    	pedidoRespository.save(pedido);
+    	return true;
     }
  
 
@@ -226,7 +231,6 @@ public class ProductController {
     	
     	return product_orderInstances;
     }
-
 	*/ 
     
 	//Add user
