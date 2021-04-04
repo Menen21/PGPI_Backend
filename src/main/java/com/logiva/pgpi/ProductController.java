@@ -127,7 +127,7 @@ public class ProductController {
     }
     
 
-    //Get instances and positions for Client Order. 
+    //Process client order and get instances and positions for products. 
     @PostMapping("PGPI/api/backend/pedido/order_pos")
     public List<Object> get_ins_pos_order(@RequestBody Pedido pedido){
     	List<Integer> id_vals = get_values_string(pedido.getId_producto());
@@ -139,7 +139,7 @@ public class ProductController {
     	}
 
     	for(int i = 0; i < id_vals.size(); i++) {
-    		all_pos_prod.add(get_ins_pos_product(pedido, id_vals.get(i), cant_vals.get(i)));
+    		all_pos_prod.add(get_save_ins_pos_product(pedido, id_vals.get(i), cant_vals.get(i)));
     	}
     	
     	pedido.setEstado("Preparación");
@@ -147,7 +147,48 @@ public class ProductController {
     	all_pos_prod.add(ped);
 		return all_pos_prod;
     }
+    
+    //Return Product positions for a specific order
+    @GetMapping("PGPI/api/backend/pedido/pedidoid_pos")
+    public List<Object> pedido_pos(@RequestParam String id){
+    	int ped_id = Integer.parseInt(id);
+    	List<Pedido> pedidos = pedidoRespository.findAll();
+    	List<Object> posiciones_pedido = new ArrayList<Object>();
+    	
+    	for(Pedido pedido: pedidos) {
+    		if(ped_id == pedido.getId()) {
+    			
+    			List<Integer> id_vals = get_values_string(pedido.getId_producto());
+    	    	List<Integer> cant_vals = get_values_string(pedido.getCantidad());
+    	    	
+    	    	for(int i = 0; i < id_vals.size(); i++) {
+    	    		List<Object> pos_ins = get_ins_pos_product(pedidos, pedido, id_vals.get(i), cant_vals.get(i));
+    	    		posiciones_pedido.add(pos_ins.get(0));
+    	    	}
+    	    	posiciones_pedido.add(pedido);
+    		}
+    	}
+    	
+        return posiciones_pedido;
+    }
 
+    private List<Object> get_ins_pos_product(List<Pedido> pedidos, Pedido pedido, Integer prod_id, Integer cantidad) {
+    	int cantidad_resv = 0;
+    	
+    	for (Pedido ped: pedidos) {
+    		List<Integer> id_vals = get_values_string(ped.getId_producto());
+    		if((ped.getId() < pedido.getId()) & (id_vals.contains(prod_id)) & (ped.getEstado().equals(pedido.getEstado()))) {
+    			List<Integer> id_vals_2 = get_values_string(ped.getId_producto());
+    			int index = id_vals_2.indexOf(prod_id);
+    			List<Integer> cant_vals = get_values_string(ped.getCantidad());
+    			cantidad_resv = cantidad_resv + cant_vals.get(index);
+    		}
+    	}
+    	
+    	return InstancesProducts(prod_id, cantidad, cantidad_resv);
+	}
+    
+    
   //Delete instances and positions for Client Order. 
     @PostMapping("PGPI/api/backend/pedido/order_del")
     public boolean delete_ins_pos_order(@RequestParam String id){
@@ -162,14 +203,18 @@ public class ProductController {
     	    	for(int i = 0; i < id_vals.size(); i++) {
     	    		delete_ins_pos_product(pedidos, pedido, id_vals.get(i), cant_vals.get(i));
     	    	}
+    	    	pedido.setEstado("En Camino");
+    	    	pedidoRespository.save(pedido);
+    	    	return true;
     		}
+
     	}
     	
-    	return true;
+    	return false;
     }
     
         
-    public List<Object> get_ins_pos_product(Pedido pedido, int id, int cantidad){
+    public List<Object> get_save_ins_pos_product(Pedido pedido, int id, int cantidad){
     	List<Producto> productos = productoRespository.findAll();
 
     	for (Producto p: productos) {
@@ -185,20 +230,57 @@ public class ProductController {
     }
     
     
-    public boolean delete_ins_pos_product(List<Pedido> pedidos, Pedido pedido, int prod_id, int cantidad){
+    private List<Object> getInstancesProducts(int id_producto, int cantidad) {
+    	List<Posicion> posiciones = posicionRespository.findAll();
+    	List<Object> instancias_posiciones = new ArrayList<Object>();
+	    	
+    	for (Instancia_Producto ins: instancias_disp) {
+    		if((ins.getId_producto() == id_producto) & (ins.getDisponible() == 1)) {
+	    		for (Posicion pos: posiciones) {
+	    			if((cantidad > 0) & (pos.getId() == ins.getId_posicion())) {
+	    				List<Object> pareja_pos_ins = new ArrayList<Object>();
+	    				pareja_pos_ins.add(pos);
+	    				pareja_pos_ins.add(ins);   		
+	    				instancias_posiciones.add(pareja_pos_ins);
+		    			cantidad--;
+		    			ins.setDisponible(0);
+		    		}
+	    			
+	    		}
+    		}
+    	}
+		return instancias_posiciones;
+	}
+    
+    
+    //removes the products sold and moves inventory from 'Stock' to 'Preparation' if needed
+	@SuppressWarnings("unchecked")
+	public boolean delete_ins_pos_product(List<Pedido> pedidos, Pedido pedido, int prod_id, int cantidad){
+    	List<Posicion> posiciones = posicionRespository.findAll();
     	int cantidad_resv = 0;
+    	int columna =  return_position_product(prod_id, posiciones, instancias_disp);
     	
     	for (Pedido ped: pedidos) {
     		List<Integer> id_vals = get_values_string(pedido.getId_producto());
     		if((ped.getId() < pedido.getId()) & (id_vals.contains(prod_id)) & (ped.getEstado().equals(pedido.getEstado()))) {
-    			int index = id_vals.indexOf(prod_id);
-    			List<Integer> cant_vals = get_values_string(pedido.getCantidad());
+    			List<Integer> id_vals_2 = get_values_string(ped.getId_producto());
+    			int index = id_vals_2.indexOf(prod_id);
+    			List<Integer> cant_vals = get_values_string(ped.getCantidad());
     			cantidad_resv = cantidad_resv + cant_vals.get(index);
     		}
     	}
-    	deleteInstancesProducts(prod_id, cantidad, cantidad_resv);
-    	pedido.setEstado("En Camino");
-    	pedidoRespository.save(pedido);
+    	List<Object> ins_pos= InstancesProducts(prod_id, cantidad, cantidad_resv);
+  
+    	List <Posicion> pos = (List<Posicion>) ins_pos.get(0);
+    	List <Instancia_Producto> ins = (List<Instancia_Producto>) ins_pos.get(1);
+    	
+    	posicionRespository.deleteInBatch(pos);
+    	instanciaProductoRespository.deleteInBatch(ins);
+    	
+    	int count_left_prep = count_products(2, columna);
+		if(count_left_prep == 0) {
+			updateInstances(1, columna, posiciones);
+		}
     	return true;
     }
  
@@ -302,34 +384,12 @@ public class ProductController {
     	instanciaProductoRespository.saveAll(new_instancias);
     }
     
-    private List<Object> getInstancesProducts(int id_producto, int cantidad) {
-    	List<Posicion> posiciones = posicionRespository.findAll();
-    	List<Object> instancias_posiciones = new ArrayList<Object>();
-	    	
-    	for (Instancia_Producto ins: instancias_disp) {
-    		if((ins.getId_producto() == id_producto) & (ins.getDisponible() == 1)) {
-	    		for (Posicion pos: posiciones) {
-	    			if((cantidad > 0) & (pos.getId() == ins.getId_posicion())) {
-	    				List<Object> pareja_pos_ins = new ArrayList<Object>();
-	    				pareja_pos_ins.add(pos);
-	    				pareja_pos_ins.add(ins);   		
-	    				instancias_posiciones.add(pareja_pos_ins);
-		    			cantidad--;
-		    			ins.setDisponible(0);
-		    		}
-	    			
-	    		}
-    		}
-    	}
-		return instancias_posiciones;
-	}
-    
-    //Used when there is an order, removes the products sold and moves inventory from 'Stock' to 'Preparation' if needed
-    private void deleteInstancesProducts(int id_producto, int cantidad, int cantidad_resv) {
+    //Used when there is an order, to get positions and instances
+	private List<Object> InstancesProducts(int id_producto, int cantidad, int cantidad_resv) {
     	List<Posicion> posiciones = posicionRespository.findAll();
     	List<Instancia_Producto> del_instancias = new ArrayList<Instancia_Producto>();
     	List<Posicion> del_posiciones = new ArrayList<Posicion>();
-    	int columna =  return_position_product(id_producto, posiciones, instancias_disp);
+    	List<Object> pos_ins = new ArrayList<Object>();
 	    	
     	while((cantidad_resv + cantidad > 0)) {
 	        for (Instancia_Producto ins: instancias_disp) {
@@ -347,14 +407,9 @@ public class ProductController {
 	        	}
 	        }
     	}
-    	
-    	posicionRespository.deleteInBatch(del_posiciones);
-    	instanciaProductoRespository.deleteInBatch(del_instancias);
-    	
-    	int count_left_prep = count_products(2, columna);
-		if(count_left_prep == 0) {
-			updateInstances(1, columna, posiciones);
-		}
+    	pos_ins.add(del_posiciones);
+    	pos_ins.add(del_instancias);
+    	return pos_ins;
 	}
 
 
