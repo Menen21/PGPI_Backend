@@ -28,7 +28,27 @@ public class ProductController {
     List<Instancia_Producto> instancias_disp = new ArrayList<Instancia_Producto>();
     @PostConstruct
     public void init() {
+    	List<Pedido> pedidos = pedidoRespository.findAll();
     	instancias_disp.addAll(instanciaProductoRespository.findAll());
+    	
+    	for(Pedido ped: pedidos) {
+    		if(ped.getEstado().equals("PREPARACION")) {
+        		List<Integer> id_vals = get_values_string(ped.getId_producto());
+        		List<Integer> cant_vals = get_values_string(ped.getCantidad());
+        		for (int i = 0; i < id_vals.size();i++) {
+        			 update_ins_disp_prod(id_vals.get(i), cant_vals.get(i));
+        		}
+    		}
+    	}
+    }
+    
+    public void update_ins_disp_prod(int prod_id, int cantidad){
+    	for (Instancia_Producto ins_prod: instancias_disp) {
+    		if((ins_prod.getId_producto() == prod_id) & (cantidad > 0) & (ins_prod.getDisponible()==1)) {
+    			ins_prod.setDisponible(0);
+    			cantidad--;
+    		}
+    	}
     }
 
     //Listing Products
