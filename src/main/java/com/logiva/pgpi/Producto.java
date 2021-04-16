@@ -15,20 +15,17 @@ public class Producto {
 	
 	private int cantidad;
 	private String nombre;
-	private String Proveedor;
+	private String proveedor;
 	private int cantidad_minima_restock;
 	
 	public Producto() {
 		
 	}
 	
-	
-	
-	public Producto(int id, int cantidad, String nombre, int cantidad_minima_restock) {
-		super();
-		this.id = id;
+	public Producto(int cantidad, String nombre, String proveedor, int cantidad_minima_restock) {
 		this.cantidad = cantidad;
 		this.nombre = nombre;
+		this.proveedor = proveedor;
 		this.cantidad_minima_restock = cantidad_minima_restock;
 	}
 
@@ -60,10 +57,10 @@ public class Producto {
 		this.nombre = nombre;
 	}
 	public String getProveedor() {
-		return Proveedor;
+		return proveedor;
 	}
 	public void setProveedor(String proveedor) {
-		Proveedor = proveedor;
+		this.proveedor = proveedor;
 	}
 	public int getCantidad_minima_restock() {
 		return cantidad_minima_restock;

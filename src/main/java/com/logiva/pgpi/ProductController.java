@@ -24,49 +24,71 @@ public class ProductController {
     PosicionRepository posicionRespository;
     @Autowired
     InstanciaProductoRepository instanciaProductoRespository;
+    
+
+    @PostMapping("PGPI/api/backend/producto/test")
+    public void test(){
+    	List<Integer> ids = new ArrayList<Integer>();
+    	List<Instancia_Producto> ins_prod0= instanciaProductoRespository.findByIdproducto(257);
+    	for(Instancia_Producto in: ins_prod0) {
+    		ids.add(in.getIdposicion());
+    	}
+    	List<Posicion> posi0 = posicionRespository.findByIdIn(ids);
+    	
+    	for(Posicion pos:posi0) {
+    		System.out.println(pos.getId());
+    	}
+    	
+    	/*
+    	List<Producto> prods5 = productoRespository.findByCantidadLessThanEqual(20);
+    	for (Producto p: prods5) {
+    		System.out.println(p.getNombre());
+    	}
+    	
+    	//productoRespository.customMethod();
+    	Producto prods = productoRespository.findById(256);
+    	System.out.println(prods.getNombre());
+    	
+    	List<Producto> prods2 = productoRespository.findProductsByIdString("257,258");
+    	for (Producto p: prods2) {
+    		System.out.println(p.getNombre());
+    	}
+    	*/
+    }
+    
+    
+    
 
     List<Instancia_Producto> instancias_disp = new ArrayList<Instancia_Producto>();
+    
     @PostConstruct
     public void init() {
-    	List<Pedido> pedidos = pedidoRespository.findAll();
+    	List<Pedido> pedidos = pedidoRespository.findByEstado("PREPARACION");
     	instancias_disp.addAll(instanciaProductoRespository.findAll());
     	
     	for(Pedido ped: pedidos) {
-    		if(ped.getEstado().equals("PREPARACION")) {
-        		List<Integer> id_vals = get_values_string(ped.getId_producto());
-        		List<Integer> cant_vals = get_values_string(ped.getCantidad());
-        		for (int i = 0; i < id_vals.size();i++) {
-        			 update_ins_disp_prod(id_vals.get(i), cant_vals.get(i));
-        		}
-    		}
+        	List<Integer> id_vals = get_values_string(ped.getId_producto());
+        	List<Integer> cant_vals = get_values_string(ped.getCantidad());
+        	for (int i = 0; i < id_vals.size();i++) {
+        			update_ins_disp_prod(id_vals.get(i), cant_vals.get(i));
+        	}
     	}
     }
     
     public void update_ins_disp_prod(int prod_id, int cantidad){
     	for (Instancia_Producto ins_prod: instancias_disp) {
-    		if((ins_prod.getId_producto() == prod_id) & (cantidad > 0) & (ins_prod.getDisponible()==1)) {
+    		if((ins_prod.getIdproducto() == prod_id) & (cantidad > 0) & (ins_prod.getDisponible()==1)) {
     			ins_prod.setDisponible(0);
     			cantidad--;
     		}
     	}
     }
-
+    
+    
     //Listing Products
     @GetMapping("PGPI/api/backend/producto/index")
     public List<Producto_cantidades> producto_index(){
-    	List<Producto> productos = productoRespository.findAll();
-    	List<Posicion> posiciones = posicionRespository.findAll();
-    	List<Instancia_Producto> instancias = instanciaProductoRespository.findAll();
-    	List<Producto_cantidades> productos_cantidades = new ArrayList<Producto_cantidades>();
-
-    	for (Producto p: productos) {
-    		int columna =  return_position_product(p.getId(), posiciones, instancias);
-    		int stock = count_products(1, columna);
-    		int preparacion = count_products(2, columna);
-    		productos_cantidades.add(new Producto_cantidades(p, stock, preparacion));
-    	}
-    	
-        return productos_cantidades;
+    	return productoRespository.findProductoCantidades();   
     }
 
     //Listing Orders
@@ -80,70 +102,47 @@ public class ProductController {
     public List<Posicion> posiciones_index(){
         return posicionRespository.findAll();
     }
-
-    //Listing all positions for a specific productId
-    @GetMapping("PGPI/api/backend/posiciones/indexProduct")
-    public List<Posicion> posiciones_index_productId(@RequestParam String id){
-    	List<Posicion> posiciones = posicionRespository.findAll();
-    	List<Instancia_Producto> instancias = instanciaProductoRespository.findAll();
-    	int columna =  return_position_product(Integer.parseInt(id), posiciones, instancias);
-
-    	List<Posicion> posicionesProducto = new ArrayList<Posicion>();
-    	for (Posicion pos: posiciones) {
-    		if(pos.getColumna() == columna) {
-    			posicionesProducto.add(pos);
-    		}
-    	}
-        return posicionesProducto;
-    }
-
+    
     //Listing all products instances
     @GetMapping("PGPI/api/backend/instancias/index")
     public List<Instancia_Producto> instancias_index(){
         return instanciaProductoRespository.findAll();
     }
+  
 
+    //Listing all positions for a specific productId
+    @GetMapping("PGPI/api/backend/posiciones/indexProduct")
+    public List<Posicion> posiciones_index_productId(@RequestParam String id){
+    	int id_int = Integer.parseInt(id);
+    	List<Integer> ids = new ArrayList<Integer>();
+    	List<Instancia_Producto> ins_prod= instanciaProductoRespository.findByIdproducto(id_int);
+    	for(Instancia_Producto in: ins_prod) {
+    		ids.add(in.getIdposicion());
+    	}
+        return posicionRespository.findByIdIn(ids);
+    }
+
+    
+   //Adding Products by id
+    @PostMapping("PGPI/api/backend/producto/addID")
+    public Producto_cantidades addProductID(@RequestParam int id){
+    	Producto producto = productoRespository.findById(id);
+    	List<Object> ins_prod = productoRespository.saveProducto(producto, 20);
+    	for(int i=0; i<ins_prod.size()-1; i++) {
+    		instancias_disp.add((Instancia_Producto) ins_prod.get(i));
+    	}
+    	return (Producto_cantidades) ins_prod.get(ins_prod.size()-1);
+    }
+    
+    
 	//Adding Products
     @PostMapping("PGPI/api/backend/producto/add")
-    public List<Producto_cantidades> addProduct(@RequestBody Producto producto){
-    	if (producto.getCantidad() > 40) {
-			throw new ResponseStatusException(HttpStatus.CONFLICT, "Product maximum quantity is 40.");
-		}
-    	int amount = producto.getCantidad();
-    	List<Producto> productos = productoRespository.findAll();
-    	List<Posicion> posiciones = posicionRespository.findAll();
-    	List<Instancia_Producto> instancias = instanciaProductoRespository.findAll();
-    	List<Producto_cantidades> productos_cantidades = new ArrayList<Producto_cantidades>();
-    	
-    	//Look through the table if the Product already exists.
-    	for (Producto p: productos) {
-    		//If it exists we just add the amount to existing stock if there is space
-    		if (p.getNombre().equals(producto.getNombre())){
-    			int columna =  return_position_product(p.getId(), posiciones, instancias);
-    			int count = count_products(1, columna);
-    			if ((count >= 20) || (producto.getCantidad() > 20)) {
-    				throw new ResponseStatusException(HttpStatus.CONFLICT, "Full, no space available for this product.");
-    			}
-    			p.setCantidad(p.getCantidad() + producto.getCantidad());
-    			p = productoRespository.save(p);
-    			createInstancesProductos(amount, p.getId());
-    			
-    			int stock = count_products(1, columna);
-        		int preparacion = count_products(2, columna);
-        		productos_cantidades.add(new Producto_cantidades(p, stock, preparacion));
-    			return productos_cantidades;
-    		}
+    public Producto_cantidades addProduct(@RequestBody Producto producto){
+    	List<Object> ins_prod = productoRespository.saveProducto(producto, producto.getCantidad());
+    	for(int i=0; i<ins_prod.size()-1; i++) {
+    		instancias_disp.add((Instancia_Producto) ins_prod.get(i));
     	}
-    	//If the product is new, we add it.
-    	producto = productoRespository.save(producto);
-    	createInstancesProductos(amount, producto.getId());
-    	
-    	instancias = instanciaProductoRespository.findAll();
-    	int columna =  return_position_product(producto.getId(), posiciones, instancias);
-    	int stock = count_products(1, columna);
-		int preparacion = count_products(2, columna);
-		productos_cantidades.add(new Producto_cantidades(producto, stock, preparacion));
-        return productos_cantidades;
+    	return (Producto_cantidades) ins_prod.get(ins_prod.size()-1);
     }
     
 
@@ -157,16 +156,87 @@ public class ProductController {
     	if(id_vals.size() != cant_vals.size()) {
     		throw new ResponseStatusException(HttpStatus.CONFLICT, "Size missmatch. Quantities and number of products must be the same size.");
     	}
+    	
+    	List<Integer> productos = productoRespository.availableProducts(pedido);
+    	
+    	if (productos.size() > 0) {
+    		pedido.setEstado("Pendiente");
+        	Pedido ped = pedidoRespository.save(pedido);
+        	all_pos_prod.add(productos);
+        	all_pos_prod.add(ped);
+        	return all_pos_prod;
+    	}
 
     	for(int i = 0; i < id_vals.size(); i++) {
     		all_pos_prod.add(get_save_ins_pos_product(pedido, id_vals.get(i), cant_vals.get(i)));
     	}
     	
-    	pedido.setEstado("Preparación");
+    	pedido.setEstado("PREPARACION");
     	Pedido ped = pedidoRespository.save(pedido);
     	all_pos_prod.add(ped);
 		return all_pos_prod;
     }
+    
+    public List<Object> get_save_ins_pos_product(Pedido pedido, int id, int cantidad){
+    	List<Producto> productos = productoRespository.findAll();
+
+    	for (Producto p: productos) {
+    		if ((p.getId() == id) & (p.getCantidad() >= cantidad)){
+    			p.setCantidad(p.getCantidad() - cantidad);
+    			productoRespository.save(p);
+    		}
+    	}
+    	return getInstancesProducts(id, cantidad);
+    }
+    
+    private List<Object> getInstancesProducts(int id_producto, int cantidad) {
+    	List<Posicion> posiciones = posicionRespository.findAll();
+    	List<Object> instancias_posiciones = new ArrayList<Object>();
+	    	
+    	for (Instancia_Producto ins: instancias_disp) {
+    		if((ins.getIdproducto() == id_producto) & (ins.getDisponible() == 1)) {
+	    		for (Posicion pos: posiciones) {
+	    			if((cantidad > 0) & (pos.getId() == ins.getIdposicion())) {
+	    				List<Object> pareja_pos_ins = new ArrayList<Object>();
+	    				pareja_pos_ins.add(pos);
+	    				pareja_pos_ins.add(ins);   		
+	    				instancias_posiciones.add(pareja_pos_ins);
+		    			cantidad--;
+		    			ins.setDisponible(0);
+		    		}
+	    			
+	    		}
+    		}
+    	}
+		return instancias_posiciones;
+	}
+    
+	//Set Order state from "En camino" to "Recibido"
+	@PostMapping("PGPI/api/backend/pedido/order_state_recieved")
+    public Pedido change_estado_recibido(@RequestParam String id) {
+		int ped_id = Integer.parseInt(id);
+		Pedido ped = pedidoRespository.findById(ped_id).orElse(null);
+		
+		if(ped.getEstado().equals("EN CAMINO")) {
+			ped.setEstado("Recibido");
+			
+			return pedidoRespository.save(ped);
+		}
+		
+		return null;
+	}
+	
+	
+	//Process a pending order 
+	@PostMapping("PGPI/api/backend/pedido/pending_order")
+    public List<Object> process_pending_order(@RequestParam List<Integer> prod_ids_restock, String id) {
+		int ped_id = Integer.parseInt(id);
+		for (Integer prod_id: prod_ids_restock) {
+			addProductID(prod_id);
+		}
+		return get_ins_pos_order(pedidoRespository.findById(ped_id).orElse(null));
+	}
+    
     
     //Return Product positions for a specific order
     @GetMapping("PGPI/api/backend/pedido/pedidoid_pos")
@@ -223,7 +293,7 @@ public class ProductController {
     	    	for(int i = 0; i < id_vals.size(); i++) {
     	    		delete_ins_pos_product(pedidos, pedido, id_vals.get(i), cant_vals.get(i));
     	    	}
-    	    	pedido.setEstado("En Camino");
+    	    	pedido.setEstado("EN CAMINO");
     	    	pedidoRespository.save(pedido);
     	    	return true;
     		}
@@ -232,45 +302,6 @@ public class ProductController {
     	
     	return false;
     }
-    
-        
-    public List<Object> get_save_ins_pos_product(Pedido pedido, int id, int cantidad){
-    	List<Producto> productos = productoRespository.findAll();
-
-    	for (Producto p: productos) {
-    		if ((p.getId() == id) & (p.getCantidad() >= cantidad)){
-    			p.setCantidad(p.getCantidad() - cantidad);
-    			productoRespository.save(p);
-    			return getInstancesProducts(id, cantidad);
-    		}
-    	}
-    	pedido.setEstado("Pendiente");
-		pedidoRespository.save(pedido);
-    	throw new ResponseStatusException(HttpStatus.INSUFFICIENT_STORAGE, "There is no stock. Restocking item.");
-    }
-    
-    
-    private List<Object> getInstancesProducts(int id_producto, int cantidad) {
-    	List<Posicion> posiciones = posicionRespository.findAll();
-    	List<Object> instancias_posiciones = new ArrayList<Object>();
-	    	
-    	for (Instancia_Producto ins: instancias_disp) {
-    		if((ins.getId_producto() == id_producto) & (ins.getDisponible() == 1)) {
-	    		for (Posicion pos: posiciones) {
-	    			if((cantidad > 0) & (pos.getId() == ins.getId_posicion())) {
-	    				List<Object> pareja_pos_ins = new ArrayList<Object>();
-	    				pareja_pos_ins.add(pos);
-	    				pareja_pos_ins.add(ins);   		
-	    				instancias_posiciones.add(pareja_pos_ins);
-		    			cantidad--;
-		    			ins.setDisponible(0);
-		    		}
-	    			
-	    		}
-    		}
-    	}
-		return instancias_posiciones;
-	}
     
     
     //removes the products sold and moves inventory from 'Stock' to 'Preparation' if needed
@@ -304,106 +335,6 @@ public class ProductController {
     	return true;
     }
  
-
-    
-    /*
-    //Add restock and process pending order. 
-    @PostMapping("PGPI/api/backend/pedido/pendingOrder")
-    public List<Object> pendingOrder(@RequestParam String id_pedido, String id_producto, String cantidad){
-    	int id_prod = Integer.parseInt(id_producto);
-    	int id_ped = Integer.parseInt(id_pedido);
-    	int cant = Integer.parseInt(cantidad);
-    	List<Producto> productos = productoRespository.findAll();
-    	List<Pedido> pedidos = pedidoRespository.findAll();
-    	List<Object> product_orderInstances = new ArrayList<Object>();
-    	
-    	for (Producto p: productos) {
-    		if(p.getId() == id_prod) {
-    			List<Producto_cantidades> producto_cantidades = addProduct(new Producto(p.getNombre(), cant));
-    			product_orderInstances.add(producto_cantidades);
-    		}
-    	}
-    	
-    	for (Pedido ped: pedidos) {
-    		if(ped.getId() == id_ped) {
-    			List<Object> pos_ins= get_ins_pos(ped);
-    	    	product_orderInstances.add(pos_ins);
-    		}
-    	}
-    	
-    	return product_orderInstances;
-    }
-	*/ 
-    
-	//Add user
-    @PostMapping("PGPI/api/backend/user/add")
-    public Usuario adduser(@RequestBody Usuario usuario) {
-    	List<Usuario> data = usuarioRespository.findAll();
-
-    	for (Usuario u: data) {
-    		if (u.getEmail().equals(usuario.getEmail())){
-    			return null;
-    			}
-    		}
-
-		return usuarioRespository.save(usuario);
-    }
-
-	//Testing User
-    @GetMapping("PGPI/api/backend/user/test")
-    public boolean testUser(@RequestBody Usuario usuario){
-
-    	List<Usuario> data = usuarioRespository.findAll();
-
-    	//Look through the table if the Product already exists.
-    	for (Usuario u: data) {
-    		if ((u.getEmail().equals(usuario.getEmail())) & (u.getPassword().equals(usuario.getPassword()))){
-    			return true;
-    		}
-    	}
-        return false;
-    }
-
-    //Delete all tables
-    @PostMapping("PGPI/api/backend/deleteAll")
-    public void deleteAll(){
-    	pedidoRespository.deleteAll();
-    	productoRespository.deleteAll();
-    	usuarioRespository.deleteAll();
-    	posicionRespository.deleteAll();
-    	instanciaProductoRespository.deleteAll();
-    }
-
-
-    //Used to create product instances, used when adding products
-    public void createInstancesProductos(int cantidad, int id_producto) {
-    	List<Posicion> posiciones = posicionRespository.findAll();
-    	List<Instancia_Producto> instancias = instanciaProductoRespository.findAll();
-    	int columna =  return_position_product(id_producto, posiciones, instancias);
-    	List<Instancia_Producto> new_instancias = new ArrayList<Instancia_Producto>();
-
-    	if (columna == 0){
-    		columna = return_first_available_column(posiciones);
-    		for (int i=0; i < 20; i++) {
-		    	if(cantidad>0) {	
-    				Posicion p = new Posicion(2, columna, "Preparación");
-		    		p = posicionRespository.save(p);
-		    	    new_instancias.add(new Instancia_Producto(id_producto, p.getId()));
-		    	    cantidad--;
-		    	}
-    		}
-    	}
-    	if(cantidad>0) {
-	    	for (int i=0; i < cantidad; i++) {
-	    		Posicion p = new Posicion(1, columna, "Stock");
-	    		p = posicionRespository.save(p);
-	    	    new_instancias.add(new Instancia_Producto(id_producto, p.getId()));
-	    	}
-    	}
-    	instancias_disp.addAll(new_instancias);
-    	instanciaProductoRespository.saveAll(new_instancias);
-    }
-    
     //Used when there is an order, to get positions and instances
 	private List<Object> InstancesProducts(int id_producto, int cantidad, int cantidad_resv) {
     	List<Posicion> posiciones = posicionRespository.findAll();
@@ -413,9 +344,9 @@ public class ProductController {
 	    	
     	while((cantidad_resv + cantidad > 0)) {
 	        for (Instancia_Producto ins: instancias_disp) {
-	       		if((ins.getId_producto() == id_producto) & (ins.getDisponible() == 0)) {
+	       		if((ins.getIdproducto() == id_producto) & (ins.getDisponible() == 0)) {
 	       			for (Posicion pos: posiciones) {
-	       				if (pos.getId() == ins.getId_posicion()) {
+	       				if (pos.getId() == ins.getIdposicion()) {
 	       					if((cantidad > 0) & (cantidad_resv < 1)) {
 				   	    		del_instancias.add(ins);
 				   	    		del_posiciones.add(pos);
@@ -431,30 +362,25 @@ public class ProductController {
     	pos_ins.add(del_instancias);
     	return pos_ins;
 	}
+    
 
-
-
-    //Returns the first available column
-    public int return_first_available_column(List<Posicion> posiciones) {
-    	List<Integer> used_columns = new ArrayList<Integer>();
-    	for (Posicion pos: posiciones) {
-    		used_columns.add(pos.getColumna());
-    	}
-    	for (int i=1; i<=50; i++) {
-    		if (!used_columns.contains(i)) {
-    			return i;
-    		}
-    	}
-
-    	return 0;
+    //Delete all tables
+    @PostMapping("PGPI/api/backend/deleteAll")
+    public void deleteAll(){
+    	pedidoRespository.deleteAll();
+    	productoRespository.deleteAll();
+    	usuarioRespository.deleteAll();
+    	posicionRespository.deleteAll();
+    	instanciaProductoRespository.deleteAll();
     }
+    
 
     //Returns the column for a set product
     public int return_position_product(int id_producto, List<Posicion> posiciones, List<Instancia_Producto> instancias) {
     	for (Posicion pos: posiciones) {
     		if(pos.getFila() == 2){
     			for (Instancia_Producto instan: instancias) {
-    				if((id_producto == instan.getId_producto()) & (pos.getId() == instan.getId_posicion())) {
+    				if((id_producto == instan.getIdproducto()) & (pos.getId() == instan.getIdposicion())) {
     					return pos.getColumna();
     				}
     			}
@@ -470,7 +396,7 @@ public class ProductController {
     	for (Posicion pos: posiciones) {
     		if((pos.getFila()==fila) & (pos.getColumna()==columna)) {
     			pos.setFila(2);
-    			pos.setTipo("Preparación");
+    			pos.setTipo("PREPARACION");
     			new_posiciones.add(pos);
     		}
     	}
@@ -486,7 +412,7 @@ public class ProductController {
 	    for (Posicion pos: posiciones) {
 	    	if((pos.getFila()==fila) & (pos.getColumna()==columna)) {
 	    		for (Instancia_Producto instan: instancias) {
-	    			if(pos.getId() == instan.getId_posicion()) {
+	    			if(pos.getId() == instan.getIdposicion()) {
 			    		posicionRespository.deleteById(pos.getId());
 			    		instanciaProductoRespository.deleteById(instan.getId());
 			    		counter++;

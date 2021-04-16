@@ -15,8 +15,8 @@ public class Instancia_Producto {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
 	private int id;
     
-    private int id_producto;
-    private int id_posicion;
+    private int idproducto;
+    private int idposicion;
     
     private transient int disponible = 1;
     
@@ -31,8 +31,8 @@ public class Instancia_Producto {
 	public  Instancia_Producto() {}
     
 	public Instancia_Producto(int id_producto, int id_posicion) {
-		this.id_producto = id_producto;
-		this.id_posicion = id_posicion;
+		this.idproducto = id_producto;
+		this.idposicion = id_posicion;
 	}
 	
 	public int getId() {
@@ -41,17 +41,17 @@ public class Instancia_Producto {
 	public void setId(int id) {
 		this.id = id;
 	}
-	public int getId_producto() {
-		return id_producto;
+	public int getIdproducto() {
+		return idproducto;
 	}
-	public void setId_producto(int id_producto) {
-		this.id_producto = id_producto;
+	public void setIdproducto(int id_producto) {
+		this.idproducto = id_producto;
 	}
-	public int getId_posicion() {
-		return id_posicion;
+	public int getIdposicion() {
+		return idposicion;
 	}
-	public void setId_posicion(int id_posicion) {
-		this.id_posicion = id_posicion;
+	public void setIdposicion(int id_posicion) {
+		this.idposicion = id_posicion;
 	}
     
     
