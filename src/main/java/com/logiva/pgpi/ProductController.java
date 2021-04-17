@@ -242,7 +242,7 @@ public class ProductController {
     @GetMapping("PGPI/api/backend/pedido/pedidoid_pos")
     public List<Object> pedido_pos(@RequestParam String id){
     	int ped_id = Integer.parseInt(id);
-    	Pedido pedido = pedidoRespository.findbyId(ped_id);
+    	Pedido pedido = pedidoRespository.findById(ped_id).orElse(null);
     	List<Object> posiciones_pedido = new ArrayList<Object>();
     	
     	if(pedido.getEstado().equals("PREPARACION")) {
