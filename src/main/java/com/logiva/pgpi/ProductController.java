@@ -242,25 +242,24 @@ public class ProductController {
     @GetMapping("PGPI/api/backend/pedido/pedidoid_pos")
     public List<Object> pedido_pos(@RequestParam String id){
     	int ped_id = Integer.parseInt(id);
-    	List<Pedido> pedidos = pedidoRespository.findAll();
+    	Pedido pedido = pedidoRespository.findbyId(ped_id);
     	List<Object> posiciones_pedido = new ArrayList<Object>();
     	
-    	for(Pedido pedido: pedidos) {
-    		if(ped_id == pedido.getId()) {
-    			
-    			List<Integer> id_vals = get_values_string(pedido.getId_producto());
-    	    	List<Integer> cant_vals = get_values_string(pedido.getCantidad());
+    	if(pedido.getEstado().equals("PREPARACION")) {
+    		List<Integer> id_vals = get_values_string(pedido.getId_producto());
+    		List<Integer> cant_vals = get_values_string(pedido.getCantidad());
     	    	
-    	    	for(int i = 0; i < id_vals.size(); i++) {
-    	    		List<Object> pos_ins = get_ins_pos_product(pedidos, pedido, id_vals.get(i), cant_vals.get(i));
-    	    		posiciones_pedido.add(pos_ins.get(0));
-    	    	}
-    	    	posiciones_pedido.add(pedido);
-    		}
+    		for(int i = 0; i < id_vals.size(); i++) {
+    	    	List<Object> pos_ins = get_ins_pos_product(pedidoRespository.findAll(), pedido, id_vals.get(i), cant_vals.get(i));
+    	    	posiciones_pedido.add(pos_ins.get(0));
+    	    }
+    	    posiciones_pedido.add(pedido);
+    	    return posiciones_pedido;
     	}
     	
-        return posiciones_pedido;
+    	return null;
     }
+    
 
     private List<Object> get_ins_pos_product(List<Pedido> pedidos, Pedido pedido, Integer prod_id, Integer cantidad) {
     	int cantidad_resv = 0;
