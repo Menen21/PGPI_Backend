@@ -216,7 +216,7 @@ public class ProductController {
     	    	
     		for(int i = 0; i < id_vals.size(); i++) {
     	    	List<Object> pos_ins = get_ins_pos_product(pedidoRespository.findAll(), pedido, id_vals.get(i), cant_vals.get(i));
-    	    	posiciones_pedido.addAll(Arrays.asList(id_vals.get(i), pos_ins.get(0)));
+    	    	posiciones_pedido.add(Arrays.asList(pos_ins.get(0), pos_ins.get(1)));
     	    }
     	    posiciones_pedido.add(pedido);
     	    return posiciones_pedido;
@@ -322,8 +322,7 @@ public class ProductController {
 	        	}
 	        }
     	}
-    	pos_ins.add(del_posiciones);
-    	pos_ins.add(del_instancias);
+    	pos_ins.addAll(Arrays.asList(id_producto, del_posiciones, del_instancias));
     	return pos_ins;
 	}
     
