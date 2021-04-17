@@ -23,42 +23,7 @@ public class ProductController {
     @Autowired
     PosicionRepository posicionRespository;
     @Autowired
-    InstanciaProductoRepository instanciaProductoRespository;
-    
-
-    @PostMapping("PGPI/api/backend/producto/test")
-    public void test(){
-    	List<Integer> ids = new ArrayList<Integer>();
-    	List<Instancia_Producto> ins_prod0= instanciaProductoRespository.findByIdproducto(257);
-    	for(Instancia_Producto in: ins_prod0) {
-    		ids.add(in.getIdposicion());
-    	}
-    	List<Posicion> posi0 = posicionRespository.findByIdIn(ids);
-    	
-    	for(Posicion pos:posi0) {
-    		System.out.println(pos.getId());
-    	}
-    	
-    	/*
-    	List<Producto> prods5 = productoRespository.findByCantidadLessThanEqual(20);
-    	for (Producto p: prods5) {
-    		System.out.println(p.getNombre());
-    	}
-    	
-    	//productoRespository.customMethod();
-    	Producto prods = productoRespository.findById(256);
-    	System.out.println(prods.getNombre());
-    	
-    	List<Producto> prods2 = productoRespository.findProductsByIdString("257,258");
-    	for (Producto p: prods2) {
-    		System.out.println(p.getNombre());
-    	}
-    	*/
-    }
-    
-    
-    
-
+    InstanciaProductoRepository instanciaProductoRespository;  
     List<Instancia_Producto> instancias_disp = new ArrayList<Instancia_Producto>();
     
     @PostConstruct
@@ -251,7 +216,7 @@ public class ProductController {
     	    	
     		for(int i = 0; i < id_vals.size(); i++) {
     	    	List<Object> pos_ins = get_ins_pos_product(pedidoRespository.findAll(), pedido, id_vals.get(i), cant_vals.get(i));
-    	    	posiciones_pedido.add(pos_ins.get(0));
+    	    	posiciones_pedido.addAll(Arrays.asList(id_vals.get(i), pos_ins.get(0)));
     	    }
     	    posiciones_pedido.add(pedido);
     	    return posiciones_pedido;
