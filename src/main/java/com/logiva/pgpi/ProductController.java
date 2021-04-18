@@ -115,9 +115,9 @@ public class ProductController {
     //Process client order and get instances and positions for products. 
     @PostMapping("PGPI/api/backend/pedido/order_pos")
     public List<Object> get_ins_pos_order(@RequestBody Pedido pedido_or){
-    	Pedido pedido = calculate_date(pedido_or);
-    	List<Integer> id_vals = get_values_string(pedido.getId_producto());
-    	List<Integer> cant_vals = get_values_string(pedido.getCantidad());
+    	List<Integer> id_vals = get_values_string(pedido_or.getId_producto());
+    	List<Integer> cant_vals = get_values_string(pedido_or.getCantidad());
+    	Pedido pedido = calculate_date(pedido_or, cant_vals);
     	List<Object> all_pos_prod = new ArrayList<Object>();
     	
     	if(id_vals.size() != cant_vals.size()) {
@@ -394,7 +394,7 @@ public class ProductController {
     }
 	
 	
-    private Pedido calculate_date(Pedido pedido) {
+    private Pedido calculate_date(Pedido pedido, List<Integer> cant_vals) {
 		Calendar c = Calendar.getInstance();
 		c.setTime(pedido.getFecha_Pedido());
 		if(pedido.getTipo().toUpperCase().equals("URGENTE")) {
@@ -403,6 +403,12 @@ public class ProductController {
 		else {
 			c.add(Calendar.DATE, 3);
 		}
+		
+		int cantidad = 0;
+		for (Integer val: cant_vals) {
+			cantidad+=val;
+		}
+		pedido.setPeso((float) (cantidad * 0.2));
 		pedido.setFecha_Entrega(c.getTime());
 		return pedido;
 	}
