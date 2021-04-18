@@ -2,6 +2,7 @@ package com.logiva.pgpi;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -113,7 +114,8 @@ public class ProductController {
 
     //Process client order and get instances and positions for products. 
     @PostMapping("PGPI/api/backend/pedido/order_pos")
-    public List<Object> get_ins_pos_order(@RequestBody Pedido pedido){
+    public List<Object> get_ins_pos_order(@RequestBody Pedido pedido_or){
+    	Pedido pedido = calculate_date(pedido_or);
     	List<Integer> id_vals = get_values_string(pedido.getId_producto());
     	List<Integer> cant_vals = get_values_string(pedido.getCantidad());
     	List<Object> all_pos_prod = new ArrayList<Object>();
@@ -141,8 +143,8 @@ public class ProductController {
     	all_pos_prod.add(ped);
 		return all_pos_prod;
     }
-    
-    public List<Object> get_save_ins_pos_product(Pedido pedido, int id, int cantidad){
+
+	public List<Object> get_save_ins_pos_product(Pedido pedido, int id, int cantidad){
     	List<Producto> productos = productoRespository.findAll();
 
     	for (Producto p: productos) {
@@ -390,6 +392,20 @@ public class ProductController {
 	    }
     	return counter;
     }
+	
+	
+    private Pedido calculate_date(Pedido pedido) {
+		Calendar c = Calendar.getInstance();
+		c.setTime(pedido.getFecha_Pedido());
+		if(pedido.getTipo().toUpperCase().equals("URGENTE")) {
+			c.add(Calendar.DATE, 1);
+		}
+		else {
+			c.add(Calendar.DATE, 3);
+		}
+		pedido.setFecha_Entrega(c.getTime());
+		return pedido;
+	}
 
 	//Count products in a specific row and column
 	private int count_products(int fila, int columna) {
