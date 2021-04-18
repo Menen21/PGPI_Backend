@@ -288,8 +288,8 @@ public class ProductController {
     	}
     	List<Object> ins_pos= InstancesProducts(prod_id, cantidad, cantidad_resv);
   
-    	List <Posicion> pos = (List<Posicion>) ins_pos.get(0);
-    	List <Instancia_Producto> ins = (List<Instancia_Producto>) ins_pos.get(1);
+    	List <Posicion> pos = (List<Posicion>) ins_pos.get(1);
+    	List <Instancia_Producto> ins = (List<Instancia_Producto>) ins_pos.get(2);
     	
     	posicionRespository.deleteInBatch(pos);
     	instanciaProductoRespository.deleteInBatch(ins);
@@ -409,6 +409,7 @@ public class ProductController {
 			cantidad+=val;
 		}
 		pedido.setPeso((float) (cantidad * 0.2));
+		System.out.println(pedido.getPeso());
 		pedido.setFecha_Entrega(c.getTime());
 		return pedido;
 	}
