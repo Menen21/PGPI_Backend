@@ -19,8 +19,6 @@ public class ProductController {
     PedidoRepository pedidoRespository;
 	@Autowired
     ProductRepository productoRespository;
-	@Autowired
-    UsuarioRepository usuarioRespository;
     @Autowired
     PosicionRepository posicionRespository;
     @Autowired
@@ -114,7 +112,7 @@ public class ProductController {
 
     //Process client order and get instances and positions for products. 
     @PostMapping("PGPI/api/backend/pedido/order_pos")
-    public List<Object> get_ins_pos_order(@RequestBody Pedido pedido_or){
+    public List<Object> process_order(@RequestBody Pedido pedido_or){
     	List<Integer> id_vals = get_values_string(pedido_or.getId_producto());
     	List<Integer> cant_vals = get_values_string(pedido_or.getCantidad());
     	Pedido pedido = calculate_date(pedido_or, cant_vals);
@@ -185,7 +183,7 @@ public class ProductController {
 		Pedido ped = pedidoRespository.findById(ped_id).orElse(null);
 		
 		if(ped.getEstado().equals("EN CAMINO")) {
-			ped.setEstado("Recibido");
+			ped.setEstado("RECIBIDO");
 			
 			return pedidoRespository.save(ped);
 		}
@@ -201,7 +199,7 @@ public class ProductController {
 		for (Integer prod_id: prod_ids_restock) {
 			addProductID(prod_id);
 		}
-		return get_ins_pos_order(pedidoRespository.findById(ped_id).orElse(null));
+		return process_order(pedidoRespository.findById(ped_id).orElse(null));
 	}
     
     
@@ -290,9 +288,10 @@ public class ProductController {
   
     	List <Posicion> pos = (List<Posicion>) ins_pos.get(1);
     	List <Instancia_Producto> ins = (List<Instancia_Producto>) ins_pos.get(2);
+
     	
-    	posicionRespository.deleteInBatch(pos);
-    	instanciaProductoRespository.deleteInBatch(ins);
+    	posicionRespository.deleteAll(pos);
+    	instanciaProductoRespository.deleteAll(ins);
     	
     	int count_left_prep = count_products(2, columna);
 		if(count_left_prep == 0) {
@@ -334,7 +333,6 @@ public class ProductController {
     public void deleteAll(){
     	pedidoRespository.deleteAll();
     	productoRespository.deleteAll();
-    	usuarioRespository.deleteAll();
     	posicionRespository.deleteAll();
     	instanciaProductoRespository.deleteAll();
     }
@@ -367,32 +365,6 @@ public class ProductController {
     	}
     	posicionRespository.saveAll(new_posiciones);
 	}
-
-    //Delete products sold
-	public int deleteInstances(int fila, int columna, List<Posicion> posiciones, List<Instancia_Producto> instancias, int cantidad) {
-    	int counter=0;
-    	if(cantidad > 20) {
-    		cantidad = 20;
-    	}
-	    for (Posicion pos: posiciones) {
-	    	if((pos.getFila()==fila) & (pos.getColumna()==columna)) {
-	    		for (Instancia_Producto instan: instancias) {
-	    			if(pos.getId() == instan.getIdposicion()) {
-			    		posicionRespository.deleteById(pos.getId());
-			    		instanciaProductoRespository.deleteById(instan.getId());
-			    		counter++;
-			    		cantidad--;
-
-			    		if (cantidad < 1) {
-			    			return counter;
-			    		}
-	    			}
-	    		}
-	    	}
-	    }
-    	return counter;
-    }
-	
 	
     private Pedido calculate_date(Pedido pedido, List<Integer> cant_vals) {
 		Calendar c = Calendar.getInstance();
@@ -409,7 +381,6 @@ public class ProductController {
 			cantidad+=val;
 		}
 		pedido.setPeso((float) (cantidad * 0.2));
-		System.out.println(pedido.getPeso());
 		pedido.setFecha_Entrega(c.getTime());
 		return pedido;
 	}

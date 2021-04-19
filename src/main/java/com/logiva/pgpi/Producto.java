@@ -35,8 +35,7 @@ public class Producto {
 		this.nombre = nombre;
 		this.cantidad = cantidad;
 	}
-
-
+	
 
 	public int getId() {
 		return id;

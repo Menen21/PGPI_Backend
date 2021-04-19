@@ -38,22 +38,11 @@ public class Instancia_Producto {
 	public int getId() {
 		return id;
 	}
-	public void setId(int id) {
-		this.id = id;
-	}
 	public int getIdproducto() {
 		return idproducto;
 	}
-	public void setIdproducto(int id_producto) {
-		this.idproducto = id_producto;
-	}
 	public int getIdposicion() {
 		return idposicion;
-	}
-	public void setIdposicion(int id_posicion) {
-		this.idposicion = id_posicion;
-	}
-    
-    
+	}  
 
 }

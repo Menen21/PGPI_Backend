@@ -28,24 +28,31 @@ public class Pedido {
     private float peso;
     private int cod_Postal;
     
-	public String getNombre() {
-		return nombre;
+
+    
+	public Pedido() {
 	}
-	public void setNombre(String nombre) {
+
+	public Pedido(String id_producto, String cantidad, String direccion, String estado, int id_cliente, String nombre,
+			String tipo, String agencia, Date fecha_Pedido, Date fecha_Entrega, float peso, int cod_Postal) {
+		this.id_producto = id_producto;
+		this.cantidad = cantidad;
+		this.direccion = direccion;
+		this.estado = estado;
+		this.id_cliente = id_cliente;
 		this.nombre = nombre;
+		this.tipo = tipo;
+		this.agencia = agencia;
+		this.fecha_Pedido = fecha_Pedido;
+		this.fecha_Entrega = fecha_Entrega;
+		this.peso = peso;
+		this.cod_Postal = cod_Postal;
 	}
+	
 	public String getTipo() {
 		return tipo;
 	}
-	public void setTipo(String tipo) {
-		this.tipo = tipo;
-	}
-	public String getAgencia() {
-		return agencia;
-	}
-	public void setAgencia(String agencia) {
-		this.agencia = agencia;
-	}
+
 	public Date getFecha_Pedido() {
 		return fecha_Pedido;
 	}
