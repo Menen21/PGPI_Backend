@@ -68,6 +68,74 @@ public class Pedido {
 	public void setEstado(String estado) {
 		this.estado = estado;
 	}
+	public String getDireccion() {
+		return direccion;
+	}
+
+	public void setDireccion(String direccion) {
+		this.direccion = direccion;
+	}
+
+	public int getId_cliente() {
+		return id_cliente;
+	}
+
+	public void setId_cliente(int id_cliente) {
+		this.id_cliente = id_cliente;
+	}
+
+	public String getNombre() {
+		return nombre;
+	}
+
+	public void setNombre(String nombre) {
+		this.nombre = nombre;
+	}
+
+	public String getAgencia() {
+		return agencia;
+	}
+
+	public void setAgencia(String agencia) {
+		this.agencia = agencia;
+	}
+
+	public int getCod_Postal() {
+		return cod_Postal;
+	}
+
+	public void setCod_Postal(int cod_Postal) {
+		this.cod_Postal = cod_Postal;
+	}
+
+	public Date getFecha_Entrega() {
+		return fecha_Entrega;
+	}
+
+	public float getPeso() {
+		return peso;
+	}
+
+	public void setId(int id) {
+		this.id = id;
+	}
+
+	public void setId_producto(String id_producto) {
+		this.id_producto = id_producto;
+	}
+
+	public void setCantidad(String cantidad) {
+		this.cantidad = cantidad;
+	}
+
+	public void setTipo(String tipo) {
+		this.tipo = tipo;
+	}
+
+	public void setFecha_Pedido(Date fecha_Pedido) {
+		this.fecha_Pedido = fecha_Pedido;
+	}
+
 	public int getId() {
 		return id;
 	}
