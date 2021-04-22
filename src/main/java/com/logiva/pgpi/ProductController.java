@@ -42,7 +42,7 @@ public class ProductController {
     public void update_ins_disp_prod(int prod_id, int cantidad){
     	for (Instancia_Producto ins_prod: instancias_disp) {
     		if((ins_prod.getIdproducto() == prod_id) & (cantidad > 0) & (ins_prod.getDisponible()==1)) {
-    			ins_prod.setDisponible(0);
+    			ins_prod.setDisponible(0); 
     			cantidad--;
     		}
     	}
@@ -175,6 +175,16 @@ public class ProductController {
     	}
 		return instancias_posiciones;
 	}
+    
+    //Get products that need restock for a specific pending order
+  	@GetMapping("PGPI/api/backend/pedido/order_index_restock_prods")
+  	public List<Integer> get_index_restrock_prods(@RequestParam String id) {
+  		int ped_id = Integer.parseInt(id);
+  		Pedido ped = pedidoRespository.findById(ped_id).orElse(null);
+  		
+		return productoRespository.availableProducts(ped);
+  	}
+  	
     
 	//Set Order state from "En camino" to "Recibido"
 	@PostMapping("PGPI/api/backend/pedido/order_state_recieved")
