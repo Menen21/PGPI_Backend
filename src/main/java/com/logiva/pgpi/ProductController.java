@@ -305,7 +305,6 @@ public class ProductController {
     	instanciaProductoRespository.deleteInBatch(ins);
     	
     	int count_left_prep = productoRespository.countProductosPosicion(prod_id, "PREPARACION");
-    	System.out.println(count_left_prep);
 		if(count_left_prep == 0) {
 			posiciones = posicionRespository.findAll();
 			updateInstances(1, columna, posiciones);
