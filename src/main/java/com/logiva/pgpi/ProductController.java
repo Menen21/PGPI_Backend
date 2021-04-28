@@ -283,6 +283,7 @@ public class ProductController {
 	public boolean delete_ins_pos_product(List<Pedido> pedidos, Pedido pedido, int prod_id, int cantidad){
     	List<Posicion> posiciones = posicionRespository.findAll();
     	int cantidad_resv = 0;
+    	
     	int columna =  return_position_product(prod_id, posiciones, instancias_disp);
     	
     	for (Pedido ped: pedidos) {
@@ -300,11 +301,13 @@ public class ProductController {
     	List <Instancia_Producto> ins = (List<Instancia_Producto>) ins_pos.get(2);
 
     	
-    	posicionRespository.deleteAll(pos);
-    	instanciaProductoRespository.deleteAll(ins);
+    	posicionRespository.deleteInBatch(pos);
+    	instanciaProductoRespository.deleteInBatch(ins);
     	
-    	int count_left_prep = count_products(2, columna);
+    	int count_left_prep = productoRespository.countProductosPosicion(prod_id, "PREPARACION");
+    	System.out.println(count_left_prep);
 		if(count_left_prep == 0) {
+			posiciones = posicionRespository.findAll();
 			updateInstances(1, columna, posiciones);
 		}
     	return true;
@@ -393,18 +396,6 @@ public class ProductController {
 		pedido.setPeso((float) (cantidad * 0.2));
 		pedido.setFecha_Entrega(c.getTime());
 		return pedido;
-	}
-
-	//Count products in a specific row and column
-	private int count_products(int fila, int columna) {
-		List<Posicion> posiciones = posicionRespository.findAll();
-		int count = 0;
-		for (Posicion pos: posiciones) {
-			if((pos.getFila()==fila) & (pos.getColumna()==columna)) {
-				count++;
-			}
-		}
-		return count;
 	}
 
 	public List<Integer> get_values_string(String values) {

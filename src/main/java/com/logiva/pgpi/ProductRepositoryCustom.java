@@ -7,4 +7,5 @@ public interface ProductRepositoryCustom {
 	List<Producto> findProductsByIdString(String products);
 	List<Producto_cantidades> findProductoCantidades();
 	List<Object> saveProducto(Producto producto, int cantidad);
+	int countProductosPosicion(int id, String tipo);
 }
