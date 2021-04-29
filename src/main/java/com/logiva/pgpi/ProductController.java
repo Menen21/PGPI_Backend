@@ -22,7 +22,9 @@ public class ProductController {
     @Autowired
     PosicionRepository posicionRespository;
     @Autowired
-    InstanciaProductoRepository instanciaProductoRespository;  
+    InstanciaProductoRepository instanciaProductoRespository;
+    @Autowired
+    ProveedorRepository proveedorRespository;
     List<Instancia_Producto> instancias_disp = new ArrayList<Instancia_Producto>();
     
     @PostConstruct
@@ -72,6 +74,12 @@ public class ProductController {
     public List<Instancia_Producto> instancias_index(){
         return instanciaProductoRespository.findAll();
     }
+    
+    //Listing all proveedores
+    @GetMapping("PGPI/api/backend/proveedor/index")
+    public List<Proveedor> proveedores_index(){
+        return proveedorRespository.findAll();
+    }
   
 
     //Listing all positions for a specific productId
@@ -102,6 +110,9 @@ public class ProductController {
 	//Adding Products
     @PostMapping("PGPI/api/backend/producto/add")
     public Producto_cantidades addProduct(@RequestBody Producto producto){
+    	if(proveedorRespository.findByNombre(producto.getProveedor()) == null) {
+    		proveedorRespository.save(new Proveedor(producto.getProveedor()));
+    	}
     	List<Object> ins_prod = productoRespository.saveProducto(producto, producto.getCantidad());
     	for(int i=0; i<ins_prod.size()-1; i++) {
     		instancias_disp.add((Instancia_Producto) ins_prod.get(i));
@@ -339,7 +350,17 @@ public class ProductController {
     	return pos_ins;
 	}
     
-
+	//Modify Producto Proveedor
+	@PostMapping("PGPI/api/backend/producto/modifyProveedor")
+	public void modifyProveedor(int id, String nombre){
+    	if(proveedorRespository.findByNombre(nombre) == null) {
+    		proveedorRespository.save(new Proveedor(nombre));
+    	}
+    	Producto prod = productoRespository.findById(id);
+    	prod.setProveedor(nombre);
+    	productoRespository.save(prod);
+	}
+	
     //Delete all tables
     @PostMapping("PGPI/api/backend/deleteAll")
     public void deleteAll(){
@@ -347,6 +368,7 @@ public class ProductController {
     	productoRespository.deleteAll();
     	posicionRespository.deleteAll();
     	instanciaProductoRespository.deleteAll();
+    	proveedorRespository.deleteAll();
     }
     
 
