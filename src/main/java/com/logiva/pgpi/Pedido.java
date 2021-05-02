@@ -49,25 +49,6 @@ public class Pedido {
 		this.cod_Postal = cod_Postal;
 	}
 	
-	public String getTipo() {
-		return tipo;
-	}
-
-	public Date getFecha_Pedido() {
-		return fecha_Pedido;
-	}
-	public void setFecha_Entrega(Date fecha_Entrega) {
-		this.fecha_Entrega = fecha_Entrega;
-	}
-	public void setPeso(float peso) {
-		this.peso = peso;
-	}
-	public String getEstado() {
-		return estado;
-	}
-	public void setEstado(String estado) {
-		this.estado = estado;
-	}
 	public String getDireccion() {
 		return direccion;
 	}
@@ -134,6 +115,26 @@ public class Pedido {
 
 	public void setFecha_Pedido(Date fecha_Pedido) {
 		this.fecha_Pedido = fecha_Pedido;
+	}
+
+	public String getTipo() {
+		return tipo;
+	}
+
+	public Date getFecha_Pedido() {
+		return fecha_Pedido;
+	}
+	public void setFecha_Entrega(Date fecha_Entrega) {
+		this.fecha_Entrega = fecha_Entrega;
+	}
+	public void setPeso(float peso) {
+		this.peso = peso;
+	}
+	public String getEstado() {
+		return estado;
+	}
+	public void setEstado(String estado) {
+		this.estado = estado;
 	}
 
 	public int getId() {

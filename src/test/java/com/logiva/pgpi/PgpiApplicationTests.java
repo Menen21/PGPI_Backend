@@ -5,6 +5,7 @@ import static org.junit.Assert.assertEquals;
 import java.util.Date;
 import java.util.List;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -44,6 +45,16 @@ class PgpiApplicationTests {
     	controller.init();
     }
     
+    @AfterAll
+    public void end() {    	
+    	controller.deleteAll();
+    }
+    
+    @Test
+    public void main() {
+    	PgpiApplication.main(new String[] {});
+    }
+    
     //Productos
     
     @Test
@@ -80,6 +91,15 @@ class PgpiApplicationTests {
 	public void test_productsByString() {
 		List<Producto> productos = productoRespository.findProductsByIdString("1,2");
 		assertEquals(productos.size(), 2);
+	}
+	
+	@Test
+	public void test_modifyProveedor() {
+		Producto prod = productoRespository.findByNombre(productname_2);
+		controller.modifyProveedor(prod.getId(), "NuevoProv");
+		
+		Producto prod2 = productoRespository.findByNombre(productname_2);
+		assertEquals(prod2.getProveedor(), "NuevoProv");
 	}
 	
 	//Pedidos
@@ -132,6 +152,14 @@ class PgpiApplicationTests {
     	assertEquals(count - 20, count_2);
     }
     
+    @Test
+    public void get_index_restock_products() {
+    	List<Pedido> pedidos = controller.pedido_index();
+    	String id = String.valueOf(pedidos.get(0).getId());
+    	List<Integer> prods = controller.get_index_restrock_prods(id);
+    	
+    	assertEquals(prods.size(), 0);
+    }
 	
 	//Posiciones
 	
