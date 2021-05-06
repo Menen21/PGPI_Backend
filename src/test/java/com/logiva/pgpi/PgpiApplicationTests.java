@@ -107,7 +107,7 @@ class PgpiApplicationTests {
     @Test
 	public void test_change_order_state() {
     	Producto prod = productoRespository.findByNombre(productname_2);
-    	Pedido pedido = pedidoRespository.save(new Pedido(String.valueOf(prod.getId()),"5", "Direccion", "EN CAMINO", 15, "Nombre", "Urgente", "DHL", date, date, (float) 2.0, 28022));
+    	Pedido pedido = pedidoRespository.save(new Pedido(String.valueOf(prod.getId()),"2", "Direccion", "EN CAMINO", 15, "Nombre", "Urgente", "DHL", date, date, (float) 2.0, 28022));
 
     	Pedido pedido2 = controller.change_estado_recibido(String.valueOf(pedido.getId()));
     	
@@ -117,7 +117,7 @@ class PgpiApplicationTests {
     @Test
 	public void test_change_order_state_no() {
     	Producto prod = productoRespository.findByNombre(productname_2);
-    	Pedido pedido = pedidoRespository.save(new Pedido(String.valueOf(prod.getId()),"1", "Direccion", "PREPARACION", 15, "Nombre", "Urgente", "DHL", date, date, (float) 2.0, 28022));
+    	Pedido pedido = pedidoRespository.save(new Pedido(String.valueOf(prod.getId()),"30", "Direccion", "PREPARACION", 15, "Nombre", "Urgente", "DHL", date, date, (float) 2.0, 28022));
 
     	Pedido pedido2 = controller.change_estado_recibido(String.valueOf(pedido.getId()));
     	
@@ -155,10 +155,10 @@ class PgpiApplicationTests {
     @Test
     public void get_index_restock_products() {
     	List<Pedido> pedidos = controller.pedido_index();
-    	String id = String.valueOf(pedidos.get(0).getId());
+    	String id = String.valueOf(pedidos.get(pedidos.size()-1).getId());
     	List<Integer> prods = controller.get_index_restrock_prods(id);
     	
-    	assertEquals(prods.size(), 0);
+    	assertEquals(prods.size(), 1);
     }
 	
 	//Posiciones
